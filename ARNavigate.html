@@ -48,14 +48,11 @@
                     
                     console.log("Fetching directions...");
                     fetch(directionsUrl)
-                        .then(response => {
-                            console.log("Received response:", response);
-                            return response.json();
-                        })
+                        .then(response => response.json())
                         .then(data => {
-                            console.log("Directions data:", data);
                             const route = data.routes[0].geometry.coordinates;
 
+                            // แสดงเส้นทางใน AR
                             const pathEntity = document.getElementById('path');
                             pathEntity.setAttribute('line', `points: ${route.map(point => point.join(' ')).join(', ')}; color: blue;`);
                             
@@ -74,4 +71,5 @@
     </script>
 </body>
 </html>
+
 
