@@ -17,7 +17,7 @@
             <!-- เส้นทางจะถูกสร้างที่นี่ -->
             <a-entity id="path" line="color: blue; opacity: 0.5;"></a-entity> <!-- ใช้ line สำหรับเส้นทาง -->
             <a-entity 
-                gltf-model="model.gltf" 
+                gltf-model="image/model.gltf" 
                 scale="0.5 0.5 0.5" 
                 position="0 0.1 0" 
                 animation="property: position; to: 0 0.1 0.5; dir: alternate; dur: 1000; loop: true">
@@ -59,7 +59,7 @@
                     const dx = destination.coordinates[0] - currentCoordinates.lng;
                     const dy = destination.coordinates[1] - currentCoordinates.lat;
                     const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-                    document.querySelector('a-entity[gltf-model="model.gltf"]').setAttribute('rotation', `0 ${-angle} 0`);
+                    document.querySelector('a-entity[gltf-model="image/model.gltf"]').setAttribute('rotation', `0 ${-angle} 0`);
                 })
                 .catch(error => console.error('Error fetching directions:', error));
         });
