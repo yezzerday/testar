@@ -34,40 +34,44 @@
         }
 
         // ตรวจสอบการเข้าถึงกล้อง
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => {
-                console.log("Camera access granted.");
-                navigator.geolocation.getCurrentPosition(position => {
-                    const currentCoordinates = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
+navigator.mediaDevices.getUserMedia({ video: true })
+    .then(() => {
+        console.log("Camera access granted.");
+        navigator.geolocation.getCurrentPosition(position => {
+            const currentCoordinates = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
 
-                    const accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';
-                    const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${currentCoordinates.lng},${currentCoordinates.lat};${destination.coordinates[0]},${destination.coordinates[1]}?geometries=geojson&access_token=${accessToken}`;
+            console.log("Current Coordinates:", currentCoordinates); // เพิ่มบรรทัดนี้
+
+            const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN'; // แทนที่ด้วย Access Token ของคุณ
+            const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${currentCoordinates.lng},${currentCoordinates.lat};${destination.coordinates[0]},${destination.coordinates[1]}?geometries=geojson&access_token=${accessToken}`;
+            
+            console.log("Fetching directions...");
+            fetch(directionsUrl)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Directions data:", data); // เพิ่มบรรทัดนี้
+                    const route = data.routes[0].geometry.coordinates;
+
+                    // แสดงเส้นทางใน AR
+                    const pathEntity = document.getElementById('path');
+                    pathEntity.setAttribute('line', `points: ${route.map(point => point.join(' ')).join(', ')}; color: blue;`);
                     
-                    console.log("Fetching directions...");
-                    fetch(directionsUrl)
-                        .then(response => response.json())
-                        .then(data => {
-                            const route = data.routes[0].geometry.coordinates;
+                    const dx = destination.coordinates[0] - currentCoordinates.lng;
+                    const dy = destination.coordinates[1] - currentCoordinates.lat;
+                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    document.querySelector('a-entity[gltf-model="image/arrow.gltf"]').setAttribute('rotation', `0 ${-angle} 0`);
+                })
+                .catch(error => console.error('Error fetching directions:', error));
+        });
+    })
+    .catch(error => {
+        console.error("Camera access denied:", error);
+        alert("Please allow camera access.");
+    });
 
-                            // แสดงเส้นทางใน AR
-                            const pathEntity = document.getElementById('path');
-                            pathEntity.setAttribute('line', `points: ${route.map(point => point.join(' ')).join(', ')}; color: blue;`);
-                            
-                            const dx = destination.coordinates[0] - currentCoordinates.lng;
-                            const dy = destination.coordinates[1] - currentCoordinates.lat;
-                            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-                            document.querySelector('a-entity[gltf-model="image/arrow.gltf"]').setAttribute('rotation', `0 ${-angle} 0`);
-                        })
-                        .catch(error => console.error('Error fetching directions:', error));
-                });
-            })
-            .catch(error => {
-                console.error("Camera access denied:", error);
-                alert("Please allow camera access.");
-            });
     </script>
 </body>
 </html>
