@@ -44,16 +44,16 @@
                         lng: position.coords.longitude
                     };
 
-                    console.log("Current Coordinates:", currentCoordinates); // เพิ่มบรรทัดนี้
+                    console.log("Current Coordinates:", currentCoordinates);
 
-                    const accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA'; // แทนที่ด้วย Access Token ของคุณ
+                    const accessToken = 'YOUR_ACCESS_TOKEN'; // แทนที่ด้วย Access Token ของคุณ
                     const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/driving/${currentCoordinates.lng},${currentCoordinates.lat};${destination.coordinates[0]},${destination.coordinates[1]}?geometries=geojson&access_token=${accessToken}`;
                     
                     console.log("Fetching directions...");
                     fetch(directionsUrl)
                         .then(response => response.json())
                         .then(data => {
-                            console.log("Directions data:", data); // เพิ่มบรรทัดนี้
+                            console.log("Directions data:", data);
                             const route = data.routes[0].geometry.coordinates;
 
                             // แสดงเส้นทางใน AR
