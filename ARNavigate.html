@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <title>AR Navigation</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://unpkg.com/aframe-line-component@latest/dist/aframe-line-component.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/3.2.0/aframe/build/aframe-ar.js"></script>
+    <script src="https://unpkg.com/aframe-line-component@latest/dist/aframe-line-component.min.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
     <style>
         body { margin: 0; padding: 0; }
@@ -15,7 +15,7 @@
 <body>
     <a-scene embedded arjs>
         <a-marker preset="hiro">
-            <a-entity id="path" line="color: blue; opacity: 0.5; lineWidth: 2;"></a-entity>
+            <a-entity id="path" line="color: blue; opacity: 0.5;"></a-entity>
             <a-entity 
                 gltf-model="image/arrow.gltf" 
                 scale="0.5 0.5 0.5" 
@@ -58,7 +58,7 @@
 
                             // แสดงเส้นทางใน AR
                             const pathEntity = document.getElementById('path');
-                            pathEntity.setAttribute('line', `points: ${route.map(point => point.join(' ')).join(', ')}; color: blue; lineWidth: 2;`);
+                            pathEntity.setAttribute('line', `points: ${route.map(point => point.join(' ')).join(', ')}; color: blue; opacity: 0.5;`);
                             
                             const dx = destination.coordinates[0] - currentCoordinates.lng;
                             const dy = destination.coordinates[1] - currentCoordinates.lat;
