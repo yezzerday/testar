@@ -10,6 +10,8 @@
     <!-- A-Frame และ AR.js -->
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <!-- A-Frame Extras สำหรับคอมโพเนนต์ line -->
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
         #map { position: absolute; top: 0; bottom: 50%; width: 100%; }
@@ -30,7 +32,7 @@
     <div id="ar-view">
         <a-scene embedded arjs>
             <a-marker preset="hiro">
-                <a-entity id="route" position="0 0 0" gltf-model="#routeModel" scale="1 1 1"></a-entity>
+                <!-- เส้นทาง AR จะถูกเพิ่มที่นี่ -->
             </a-marker>
             <a-entity camera></a-entity>
         </a-scene>
@@ -42,7 +44,7 @@
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [100.19261160426286,16.748037847183653 ], // พิกัดเริ่มต้น (กรุงเทพฯ)
+            center: [100.5018, 13.7563], // พิกัดเริ่มต้น (กรุงเทพฯ)
             zoom: 14
         });
 
@@ -116,7 +118,7 @@
             { name: 'NU Playground', coordinates: [100.19842089234874,16.736988862034796 ], image: 'image/park.png' }, 
             { name: 'ธนาคารกรุงไทย', coordinates: [ 100.1992812695405, 16.737478107656056], image: 'https://upload.wikimedia.org/wikipedia/th/2/29/%E0%B8%98%E0%B8%99%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%A3%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%84%E0%B8%97%E0%B8%A2.png' },
             { name: 'ธนาคารกสิกรไทย', coordinates: [ 100.19899656512207,16.736972925746034 ], image: 'https://upload.wikimedia.org/wikipedia/th/d/d6/KBANK.png' }, 
-            { name: 'test2',  coordinates:  [100.19705773025863,16.7518275884201], icon: 'image/hospital.png' },
+        { name: 'test2',  coordinates:  [100.19705773025863,16.7518275884201], icon: 'image/hospital.png' },
               { name: 'test1',  coordinates:   [100.1969277610163,16.751808077931962] ,icon: 'image/hospital.png' }
         ];
 
@@ -238,26 +240,38 @@
                 existingRoute.parentNode.removeChild(existingRoute);
             }
 
-            // สร้าง Entity ใหม่สำหรับเส้นทาง
+            // สร้างพิกัดใหม่สำหรับ AR (แปลงพิกัด GPS เป็นตำแหน่งใน AR)
+            var startCoord = route[0];
+            var arCoordinates = route.map(function(coord) {
+                return [
+                    (coord[0] - startCoord[0]) * 100, // แกน X
+                    0,                                 // แกน Y (ความสูง)
+                    (coord[1] - startCoord[1]) * 100  // แกน Z
+                ];
+            });
+
+            // สร้างเส้นทางด้วยคอมโพเนนต์ line ของ aframe-extras
             var routeEntity = document.createElement('a-entity');
             routeEntity.setAttribute('id', 'ar-route');
-
-            // สร้างกล่องเล็กๆ ตามพิกัดเส้นทาง
-            route.forEach(function(coord, index) {
-                // คำนวณตำแหน่งสัมพัทธ์สำหรับ AR (นี่เป็นการประมาณคร่าวๆ)
-                var x = (coord[0] - route[0][0]) * 100; // ปรับขนาดตามต้องการ
-                var z = (coord[1] - route[0][1]) * 100; // ปรับขนาดตามต้องการ
-                var box = document.createElement('a-box');
-                box.setAttribute('position', `${x} 0 ${z}`);
-                box.setAttribute('depth', '0.1');
-                box.setAttribute('height', '0.1');
-                box.setAttribute('width', '0.1');
-                box.setAttribute('color', '#FF0000');
-                routeEntity.appendChild(box);
+            routeEntity.setAttribute('line', {
+                start: `${arCoordinates[0][0]} ${arCoordinates[0][1]} ${arCoordinates[0][2]}`,
+                end: `${arCoordinates[arCoordinates.length - 1][0]} ${arCoordinates[arCoordinates.length - 1][1]} ${arCoordinates[arCoordinates.length - 1][2]}`,
+                color: '#FF0000',
+                opacity: 0.8,
+                linewidth: 5
             });
 
             // เพิ่มเส้นทางลงใน Scene AR
             scene.appendChild(routeEntity);
+
+            // หากต้องการให้เส้นทางเชื่อมต่อทุกจุด:
+            // ใช้คอมโพเนนต์ 'path' จาก aframe-extras
+            routeEntity.setAttribute('path', {
+                path: arCoordinates.map(coord => coord.join(' ')).join(','),
+                color: '#FF0000',
+                opacity: 0.8,
+                linewidth: 5
+            });
 
             alert(`เริ่มนำทางไปยัง ${placeName} ในโหมด AR`);
         }
