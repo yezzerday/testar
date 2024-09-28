@@ -3,15 +3,12 @@
 <head>
     <meta charset="utf-8" />
     <title>AR Navigation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />                  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Mapbox GL JS -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet" />
-    <!-- A-Frame และ AR.js -->
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-    <!-- A-Frame Extras สำหรับคอมโพเนนต์ line -->
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r137/three.min.js"></script>
     <style>
         body { 
             margin: 0; 
@@ -19,19 +16,7 @@
             font-family: Arial, sans-serif; 
             height: 100vh;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .container {
-            display: none; /* ซ่อนทั้งสองตอนแรก */
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        .container.active {
-            display: block;
+            position: relative;
         }
         #controls {
             position: absolute;
@@ -84,17 +69,19 @@
         #dropdown div:hover { 
             background: #f0f0f0; 
         }
-        /* ปรับแต่งแผนที่และ AR container */
         #map-container, #ar-container {
             width: 100%;
             height: 100%;
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #map-container.active, #ar-container.active {
+            display: block;
         }
         #map { width: 100%; height: 100%; }
-        #ar-view {
-            width: 100%;
-            height: 100%;
-        }
-        /* ปุ่มกลับไปแผนที่ใน AR view */
+        #ar-view { width: 100%; height: 100%; }
         #back-button {
             position: absolute;
             top: 10px;
@@ -111,6 +98,9 @@
         #back-button:hover {
             background: #0056b3;
         }
+        #ar-button {
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -122,20 +112,17 @@
     </div>
     <!-- Dropdown แสดงผลลัพธ์การค้นหา -->
     <div id="dropdown"></div>
+    <!-- ปุ่มนำทาง AR -->
+    <button id="ar-button" style="display: none;">นำทาง AR</button>
     <!-- ปุ่มกลับไปแผนที่ -->
     <button id="back-button" onclick="switchToMap()">กลับไปแผนที่</button>
     <!-- แผนที่ -->
-    <div id="map-container" class="active container">
+    <div id="map-container" class="active">
         <div id="map"></div>
     </div>
     <!-- AR view -->
-    <div id="ar-container" class="container">
-        <a-scene embedded arjs>
-            <a-marker preset="hiro">
-                <!-- เส้นทาง AR จะถูกเพิ่มที่นี่ -->
-            </a-marker>
-            <a-entity camera></a-entity>
-        </a-scene>
+    <div id="ar-container">
+        <canvas id="ar-view"></canvas>
     </div>
 
     <script>
@@ -149,7 +136,7 @@
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [16.74798308431835, 100.1923860295347], // พิกัดเริ่มต้น (กรุงเทพฯ)
+            center: [100.19424882682976, 16.74518953316748], // พิกัดเริ่มต้น (กรุงเทพฯ)
             zoom: 14
         });
 
@@ -166,6 +153,7 @@
         ];
 
         var dropdown = document.getElementById('dropdown');
+        var arButton = document.getElementById('ar-button');
         var markers = [];
 
         // ฟังก์ชันเพิ่มมาร์กเกอร์บนแผนที่
@@ -176,7 +164,7 @@
                     .setPopup(new mapboxgl.Popup().setHTML(`
                         <h3>${place.name}</h3>
                         <img src="${place.image}" alt="${place.name}" style="width: 100%; height: auto;" />
-                        <button style="margin-top: 10px;" onclick="navigateAR('${place.name}', [${place.coordinates[0]}, ${place.coordinates[1]}])">เส้นทาง AR</button>
+                        <button style="margin-top: 10px;" onclick="navigateAR('${place.name}', [${place.coordinates[0]}, ${place.coordinates[1]}])">นำทาง AR</button>
                     `))
                     .addTo(map);
                 markers.push(marker);
@@ -213,7 +201,7 @@
                             .setPopup(new mapboxgl.Popup().setHTML(`
                                 <h3>${place.name}</h3>
                                 <img src="${place.image}" alt="${place.name}" style="width: 100%; height: auto;" />
-                                <button style="margin-top: 10px;" onclick="navigateAR('${place.name}', [${place.coordinates[0]}, ${place.coordinates[1]}])">เส้นทาง AR</button>
+                                <button style="margin-top: 10px;" onclick="navigateAR('${place.name}', [${place.coordinates[0]}, ${place.coordinates[1]}])">นำทาง AR</button>
                             `))
                             .addTo(map);
                         markers.push(newMarker);
@@ -258,10 +246,8 @@
                             sessionStorage.setItem('arRoute', JSON.stringify(route));
                             sessionStorage.setItem('destinationName', placeName);
 
-                            // สลับไปยัง AR view
-                            switchToAR();
-                            // แสดงเส้นทางใน AR
-                            showAR(route, placeName);
+                            // แสดงปุ่มนำทาง AR
+                            arButton.style.display = 'block';
                         })
                         .catch(error => {
                             console.error('Error fetching directions:', error);
@@ -277,95 +263,136 @@
         }
 
         // ฟังก์ชันสลับไปยัง AR view
-        function switchToAR() {
+        arButton.addEventListener('click', function() {
+            // ซ่อนแผนที่และควบคุมการค้นหา
             document.getElementById('map-container').classList.remove('active');
+            document.getElementById('controls').style.display = 'none';
+            arButton.style.display = 'none';
+
+            // แสดง AR view และปุ่มกลับ
             document.getElementById('ar-container').classList.add('active');
             document.getElementById('back-button').style.display = 'block';
-            document.getElementById('controls').style.display = 'none';
-        }
+
+            // ทำลาย Mapbox map เพื่อปลด WebGL context
+            map.remove();
+
+            // เริ่มต้น AR ด้วย WebXR และ Three.js
+            initAR();
+        });
 
         // ฟังก์ชันสลับกลับไปยังแผนที่
         function switchToMap() {
+            // ซ่อน AR view และปุ่มกลับ
             document.getElementById('ar-container').classList.remove('active');
-            document.getElementById('map-container').classList.add('active');
             document.getElementById('back-button').style.display = 'none';
+
+            // แสดงแผนที่และควบคุมการค้นหา
+            document.getElementById('map-container').classList.add('active');
             document.getElementById('controls').style.display = 'block';
+
+            // สร้าง Mapbox map ใหม่
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v11',
+                center: [100.5018, 13.7563], // พิกัดเริ่มต้น (กรุงเทพฯ)
+                zoom: 14
+            });
+
+            // เพิ่มปุ่มควบคุมการนำทาง
+            map.addControl(new mapboxgl.NavigationControl());
+
+            // เพิ่มมาร์กเกอร์ใหม่
+            addMarkers();
+
             // ล้างเส้นทางใน AR
             clearAR();
         }
 
-        // ฟังก์ชันแสดงเส้นทางใน AR
-        function showAR(route, placeName) {
-            // ล้างเส้นทางเก่าใน AR
-            var scene = document.querySelector('a-scene');
-            var existingRoute = document.getElementById('ar-route');
-            if (existingRoute) {
-                existingRoute.parentNode.removeChild(existingRoute);
+        // ฟังก์ชันแสดงเส้นทางใน AR ด้วย WebXR และ Three.js
+        function initAR() {
+            // ตรวจสอบว่าเบราว์เซอร์รองรับ WebXR หรือไม่
+            if (navigator.xr) {
+                navigator.xr.requestSession('immersive-ar').then(onSessionStarted);
+            } else {
+                alert('เบราว์เซอร์ของคุณไม่รองรับ WebXR AR');
+            }
+        }
+
+        function onSessionStarted(session) {
+            // ตั้งค่าการแสดงผลของ Three.js
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('ar-view'), alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            renderer.xr.setReferenceSpaceType('local');
+
+            // สร้าง scene และ camera
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera();
+
+            // สร้างเส้นทางจากข้อมูลที่เก็บใน sessionStorage
+            const route = JSON.parse(sessionStorage.getItem('arRoute'));
+            const destinationName = sessionStorage.getItem('destinationName');
+
+            if (route && destinationName) {
+                // แปลงพิกัด GPS เป็นตำแหน่งใน Three.js
+                const startCoord = route[0];
+                const arCoordinates = route.map(function(coord) {
+                    return [
+                        (coord[0] - startCoord[0]) * 100, // แกน X
+                        0,                                 // แกน Y (ความสูง)
+                        (coord[1] - startCoord[1]) * 100  // แกน Z
+                    ];
+                });
+
+                // สร้างเส้นทาง
+                const geometry = new THREE.BufferGeometry().setFromPoints(arCoordinates.map(coord => new THREE.Vector3(coord[0], coord[1], coord[2])));
+                const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+
+                // เพิ่มลูกศรที่ปลายเส้นทาง
+                const arrowGeometry = new THREE.ConeGeometry(0.5, 1, 32);
+                const arrowMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+                const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+                arrow.position.set(arCoordinates[arCoordinates.length - 1][0], arCoordinates[arCoordinates.length - 1][1], arCoordinates[arCoordinates.length - 1][2]);
+                arrow.rotation.x = -Math.PI / 2; // ปรับการหมุนให้ชี้ไปในทิศทางที่ต้องการ
+                scene.add(arrow);
+
+                // แสดงชื่อสถานที่
+                const loader = new THREE.FontLoader();
+                loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function (font) {
+                    const textGeometry = new THREE.TextGeometry(destinationName, {
+                        font: font,
+                        size: 1,
+                        height: 0.2,
+                    });
+                    const textMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+                    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+                    textMesh.position.set(arCoordinates[arCoordinates.length - 1][0], arCoordinates[arCoordinates.length - 1][1] + 2, arCoordinates[arCoordinates.length - 1][2]);
+                    scene.add(textMesh);
+                });
             }
 
-            // ล้างลูกศรเก่าใน AR
-            var existingArrow = scene.querySelector('a-entity[geometry="primitive: cone"]');
-            if (existingArrow) {
-                existingArrow.parentNode.removeChild(existingArrow);
+            // เริ่มต้น XR session
+            session.requestReferenceSpace('local').then(function (refSpace) {
+                renderer.xr.setReferenceSpace(refSpace);
+                renderer.xr.setSession(session);
+            });
+
+            // สร้าง loop การ render
+            function animate() {
+                renderer.setAnimationLoop(function () {
+                    renderer.render(scene, camera);
+                });
             }
 
-            // สร้างพิกัดใหม่สำหรับ AR (แปลงพิกัด GPS เป็นตำแหน่งใน AR)
-            var startCoord = route[0];
-            var arCoordinates = route.map(function(coord) {
-                return [
-                    (coord[0] - startCoord[0]) * 100, // แกน X
-                    0,                                 // แกน Y (ความสูง)
-                    (coord[1] - startCoord[1]) * 100  // แกน Z
-                ];
-            });
-
-            // สร้างเส้นทางด้วยคอมโพเนนต์ 'line' ของ aframe-extras
-            var routeEntity = document.createElement('a-entity');
-            routeEntity.setAttribute('id', 'ar-route');
-            routeEntity.setAttribute('line', {
-                start: `${arCoordinates[0][0]} ${arCoordinates[0][1]} ${arCoordinates[0][2]}`,
-                end: `${arCoordinates[arCoordinates.length - 1][0]} ${arCoordinates[arCoordinates.length - 1][1]} ${arCoordinates[arCoordinates.length - 1][2]}`,
-                color: '#FF0000',
-                opacity: 0.8
-            });
-
-            // ใช้คอมโพเนนต์ 'path' จาก aframe-extras เพื่อสร้างเส้นทางที่เชื่อมต่อกัน
-            routeEntity.setAttribute('path', {
-                path: arCoordinates.map(coord => coord.join(' ')).join(','),
-                color: '#FF0000',
-                opacity: 0.8,
-                // linewidth: 2 // ลบหรือลดค่า linewidth เนื่องจากไม่รองรับในคอมโพเนนต์ 'line'
-            });
-
-            // เพิ่มเส้นทางลงใน Scene AR
-            scene.appendChild(routeEntity);
-
-            // เพิ่มลูกศรที่ปลายเส้นทางเพื่อชี้ทาง
-            var arrow = document.createElement('a-entity');
-            arrow.setAttribute('geometry', {
-                primitive: 'cone',
-                radiusBottom: 0.1,
-                height: 0.3
-            });
-            arrow.setAttribute('material', 'color: blue');
-            arrow.setAttribute('position', `${arCoordinates[arCoordinates.length - 1][0]} 0 ${arCoordinates[arCoordinates.length - 1][2]}`);
-            arrow.setAttribute('rotation', '-90 0 0'); // ปรับการหมุนให้ลูกศรชี้ไปในทิศทางที่ต้องการ
-            scene.appendChild(arrow);
-
-            alert(`เริ่มนำทางไปยัง ${placeName} ในโหมด AR`);
+            animate();
         }
 
         // ฟังก์ชันล้างเส้นทางใน AR
         function clearAR() {
-            var scene = document.querySelector('a-scene');
-            var existingRoute = document.getElementById('ar-route');
-            if (existingRoute) {
-                existingRoute.parentNode.removeChild(existingRoute);
-            }
-            var existingArrow = scene.querySelector('a-entity[geometry="primitive: cone"]');
-            if (existingArrow) {
-                existingArrow.parentNode.removeChild(existingArrow);
-            }
+            // ในกรณีนี้ เราจะไม่สามารถล้าง AR scene ได้เพราะเราใช้ WebXR Session แยกต่างหาก
+            // หากต้องการทำการเคลียร์ สามารถรีเซ็ต WebXR Session หรือสร้างใหม่
         }
     </script>
 </body>
