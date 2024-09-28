@@ -37,7 +37,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0,0,0,0.3);
@@ -149,7 +149,7 @@
         var map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [100.5018, 13.7563], // พิกัดเริ่มต้น (กรุงเทพฯ)
+            center: [100.19424882682976, 16.74518953316748], // พิกัดเริ่มต้น (กรุงเทพฯ)
             zoom: 14
         });
 
@@ -254,7 +254,7 @@
                             }
                             var route = data.routes[0].geometry.coordinates; // พิกัดเส้นทาง
 
-                            // เก็บข้อมูลเส้นทางใน sessionStorage
+                            // เก็บข้อมูลเส้นทางใน sessionStorage (หากต้องการใช้ใน AR)
                             sessionStorage.setItem('arRoute', JSON.stringify(route));
                             sessionStorage.setItem('destinationName', placeName);
 
@@ -303,6 +303,12 @@
                 existingRoute.parentNode.removeChild(existingRoute);
             }
 
+            // ล้างลูกศรเก่าใน AR
+            var existingArrow = scene.querySelector('a-entity[geometry="primitive: cone"]');
+            if (existingArrow) {
+                existingArrow.parentNode.removeChild(existingArrow);
+            }
+
             // สร้างพิกัดใหม่สำหรับ AR (แปลงพิกัด GPS เป็นตำแหน่งใน AR)
             var startCoord = route[0];
             var arCoordinates = route.map(function(coord) {
@@ -313,30 +319,38 @@
                 ];
             });
 
-            // สร้างเส้นทางด้วยคอมโพเนนต์ path ของ aframe-extras
+            // สร้างเส้นทางด้วยคอมโพเนนต์ 'line' ของ aframe-extras
             var routeEntity = document.createElement('a-entity');
             routeEntity.setAttribute('id', 'ar-route');
             routeEntity.setAttribute('line', {
                 start: `${arCoordinates[0][0]} ${arCoordinates[0][1]} ${arCoordinates[0][2]}`,
                 end: `${arCoordinates[arCoordinates.length - 1][0]} ${arCoordinates[arCoordinates.length - 1][1]} ${arCoordinates[arCoordinates.length - 1][2]}`,
                 color: '#FF0000',
-                opacity: 0.8,
-                linewidth: 5
+                opacity: 0.8
             });
 
-            // สร้างเส้นทางแบบต่อเนื่องด้วย path component
+            // ใช้คอมโพเนนต์ 'path' จาก aframe-extras เพื่อสร้างเส้นทางที่เชื่อมต่อกัน
             routeEntity.setAttribute('path', {
                 path: arCoordinates.map(coord => coord.join(' ')).join(','),
                 color: '#FF0000',
                 opacity: 0.8,
-                linewidth: 5
+                // linewidth: 2 // ลบหรือลดค่า linewidth เนื่องจากไม่รองรับในคอมโพเนนต์ 'line'
             });
 
             // เพิ่มเส้นทางลงใน Scene AR
             scene.appendChild(routeEntity);
 
-            // เพิ่มปุ่มกลับไปยังแผนที่ใน AR view (แสดงแล้วไม่ต้องเพิ่มซ้ำ)
-            document.getElementById('back-button').style.display = 'block';
+            // เพิ่มลูกศรที่ปลายเส้นทางเพื่อชี้ทาง
+            var arrow = document.createElement('a-entity');
+            arrow.setAttribute('geometry', {
+                primitive: 'cone',
+                radiusBottom: 0.1,
+                height: 0.3
+            });
+            arrow.setAttribute('material', 'color: blue');
+            arrow.setAttribute('position', `${arCoordinates[arCoordinates.length - 1][0]} 0 ${arCoordinates[arCoordinates.length - 1][2]}`);
+            arrow.setAttribute('rotation', '-90 0 0'); // ปรับการหมุนให้ลูกศรชี้ไปในทิศทางที่ต้องการ
+            scene.appendChild(arrow);
 
             alert(`เริ่มนำทางไปยัง ${placeName} ในโหมด AR`);
         }
@@ -348,9 +362,11 @@
             if (existingRoute) {
                 existingRoute.parentNode.removeChild(existingRoute);
             }
+            var existingArrow = scene.querySelector('a-entity[geometry="primitive: cone"]');
+            if (existingArrow) {
+                existingArrow.parentNode.removeChild(existingArrow);
+            }
         }
     </script>
 </body>
 </html>
-
-
