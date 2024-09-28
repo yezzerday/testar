@@ -19,6 +19,8 @@
             font-family: Arial, sans-serif; 
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .container {
             display: none; /* ซ่อนทั้งสองตอนแรก */
@@ -137,6 +139,11 @@
     </div>
 
     <script>
+        // ตรวจสอบการสนับสนุน WebGL
+        if (!window.WebGLRenderingContext) {
+            alert("เบราว์เซอร์ของคุณไม่รองรับ WebGL ซึ่งจำเป็นสำหรับการใช้งานแอปพลิเคชันนี้");
+        }
+
         // ตั้งค่า Mapbox
         mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA'; // แทนที่ด้วย Access Token ของคุณ
         var map = new mapboxgl.Map({
