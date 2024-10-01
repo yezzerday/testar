@@ -6,7 +6,7 @@
     <title>AR Location</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="places.js"></script> <!-- เรียกใช้ไฟล์ข้อมูลสถานที่ -->
+    <script src="./places.js"></script> <!-- เรียกใช้ไฟล์ข้อมูลสถานที่ -->
     <style>
         /* สไตล์ของ popup */
         #infoPopup {
@@ -33,6 +33,15 @@
     </style>
 </head>
 <body>
+    <a-scene
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true;"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false;">
+        
+        <!-- กล้อง AR ที่ใช้ตำแหน่ง GPS -->
+        <a-camera gps-camera rotation-reader></a-camera>
+
     <a-scene embedded arjs="sourceType: webcam; gpsMinDistance: 10; gpsTimeInterval: 1000;">
         <!-- สถานที่จะแสดงตามพิกัดใน places.js -->
     </a-scene>
