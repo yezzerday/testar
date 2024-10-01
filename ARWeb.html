@@ -57,7 +57,8 @@
     </div>
 
     <script>
-        // เมื่อหน้าเว็บโหลด เรียกใช้ฟังก์ชัน loadPlaces() เพื่อนำสถานที่จาก places.js มาแสดงใน AR
+        const maxDistance = 100; // ระยะที่โมเดลจะแสดง (100 เมตร)
+
         window.onload = () => {
             loadPlaces();
         };
@@ -66,73 +67,82 @@
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
                 
-                // เลือกโมเดล 3D ตามประเภทสถานที่จาก places.js
                 let modelUrl;
                 switch (place.type) {
                     case 'hospital':
-                        modelUrl = 'image/hospital.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/hospital.glb';  
                         break;
                     case 'food':
-                        modelUrl = 'image/food.glb';  // โมเดล 3D ของร้านอาหาร
+                        modelUrl = 'image/food.glb';  
                         break;
                     case 'park':
-                        modelUrl = 'image/park.glb';  // โมเดล 3D ของสวน
+                        modelUrl = 'image/park.glb';  
                         break;
                     case 'education':
-                        modelUrl = 'image/education.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/education.glb';  
                         break;
                     case 'building':
-                        modelUrl = 'image/building.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/building.glb';  
                         break;
                     case 'parking':
-                        modelUrl = 'image/parking.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/parking.glb';  
                         break;
                     case 'sport':
-                        modelUrl = 'image/muscle.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/muscle.glb';  
                         break;
                     case 'museum':
-                        modelUrl = 'image/museum.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/museum.glb';  
                         break;
                     case 'book':
-                        modelUrl = 'image/book.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/book.glb';  
                         break;
                     case 'bank':
-                        modelUrl = 'image/book.glb';  // โมเดล 3D ของโรงพยาบาล
+                        modelUrl = 'image/bank.glb';  
                         break;
                     default:
-                        modelUrl = 'image/point.glb';  // โมเดลเริ่มต้น
+                        modelUrl = 'image/point.glb'; 
                 }
 
-                // ตั้งค่าตำแหน่งโมเดลและการหมุนให้หันเข้าหาผู้ใช้
                 entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
                 entity.setAttribute('gltf-model', `url(${modelUrl})`);
                 entity.setAttribute('scale', '0.5 0.5 0.5');
                 entity.setAttribute('look-at', '[gps-camera]');
                 
-                // เมื่อคลิกโมเดล ให้แสดง Popup
+                // เพิ่มฟังก์ชันแสดง popup เมื่อคลิกโมเดล
                 entity.addEventListener('click', () => {
                     showPopup(place);
                 });
 
+                // เพิ่มฟังก์ชันตรวจสอบระยะห่าง
+                entity.setAttribute('visible', 'false'); // ซ่อนไว้ก่อน
                 document.querySelector('a-scene').appendChild(entity);
+
+                entity.addEventListener('gps-entity-place-update', (event) => {
+                    const distance = event.detail.distance;
+                    if (distance <= maxDistance) {
+                        entity.setAttribute('visible', 'true'); // แสดงโมเดลเมื่อเข้าใกล้
+                    } else {
+                        entity.setAttribute('visible', 'false'); // ซ่อนโมเดลเมื่อห่างเกินไป
+                    }
+                });
             });
         }
 
-        // แสดง Popup เมื่อคลิกโมเดล
+        // แสดง popup เมื่อคลิกโมเดล
         function showPopup(place) {
             document.getElementById('popupImage').src = place.image;
             document.getElementById('popupName').textContent = place.name;
             document.getElementById('popupDescription').textContent = place.description;
             document.getElementById('popupHours').textContent = place.hours;
             document.getElementById('popupAddress').textContent = place.address;
-
             document.getElementById('infoPopup').style.display = 'block';
         }
 
-        // ปิด Popup เมื่อคลิกปุ่ม X
+        // ปิด popup เมื่อคลิกปุ่ม X
         function closePopup() {
             document.getElementById('infoPopup').style.display = 'none';
         }
     </script>
 </body>
 </html>
+
