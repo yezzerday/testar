@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Navigation</title>
+    <!-- A-Frame and AR.js Libraries -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-camera@1.7.2/dist/aframe-gps-camera.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-gps-entity-place@1.8.0/dist/aframe-gps-entity-place.min.js"></script>
+    
+    <!-- Mapbox Libraries -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css' rel='stylesheet' />
+
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+
+        /* Style for top bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            z-index: 10;
+        }
+
+        /* Style for bottom bar */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        /* Style for minimap */
+        #map {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            border: 2px solid white;
+            z-index: 20;
+            margin-top: 10px;
+        }
+
+        /* Style for distance information */
+        .distance-info {
+            color: white;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- AR Scene -->
+    <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam;">
+        <a-camera gps-camera rotation-reader></a-camera>
+        
+        <!-- Arrow pointing -->
+        <a-entity id="arrow" 
+                  gltf-model='image/arrow.gltf'
+                  scale="2 2 2" 
+                  gps-entity-place="latitude: 13.7563; longitude: 100.5018;" 
+                  rotation="0 180 0"
+                  position="0 0 0">
+        </a-entity>
+    </a-scene>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div id="status-icon"></div>
+        <h1 id="status-text">Go straight</h1>
+    </div>
+
+    <!-- Bottom Bar with minimap -->
+    <div class="bottom-bar">
+        <div class="distance-info" id="distance">Distance: -- m</div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        // Mapbox setup
+        mapboxgl.accessToken = 'pk.eyJ1IjoiamFydWRhIiwiYSI6ImNtMDc5ZXViMDEzNGkya3NicGZzaGI1ZncifQ.N2tDCng_RYc0uCAymQ-LdA';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            zoom: 15
+        });
+
+        // Fetch destination from localStorage
+        var destinationLat = localStorage.getItem('destinationLat');
+        var destinationLng = localStorage.getItem('destinationLng');
+
+        if (destinationLat && destinationLng) {
+            new mapboxgl.Marker({ color: 'red' })
+                .setLngLat([destinationLng, destinationLat])
+                .addTo(map);
+            document.getElementById('arrow').setAttribute('gps-entity-place', `latitude: ${destinationLat}; longitude: ${destinationLng};`);
+        }
+
+        // User position from GPS
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLng = position.coords.longitude;
+
+            new mapboxgl.Marker({ color: 'blue' })
+                .setLngLat([userLng, userLat])
+                .addTo(map);
+
+            map.setCenter([userLng, userLat]);
+        });
+
+        // Update user position in real-time
+        navigator.geolocation.watchPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLng = position.coords.longitude;
+
+            map.setCenter([userLng, userLat]);
+
+            var distance = calculateDistance(userLat, userLng, destinationLat, destinationLng);
+            document.getElementById('distance').textContent = `Distance: ${distance.toFixed(2)} meters`;
+
+            // Update route status
+            updateStatus(userLat, userLng, destinationLat, destinationLng);
+        });
+
+        // Calculate distance using Haversine formula
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            var R = 6371e3; // Earth radius in meters
+            var φ1 = lat1 * Math.PI/180;
+            var φ2 = lat2 * Math.PI/180;
+            var Δφ = (lat2-lat1) * Math.PI/180;
+            var Δλ = (lon2-lon1) * Math.PI/180;
+
+            var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        // Update route status
+        function updateStatus(userLat, userLng, destinationLat, destinationLng) {
+            var angle = calculateBearing(userLat, userLng, destinationLat, destinationLng);
+
+            if (angle >= -45 && angle < 45) {
+                document.getElementById('status-text').textContent = 'Go straight';
+                document.getElementById('status-icon').innerHTML = '<img src="straight.png" alt="Go straight" />';
+            } else if (angle >= 45 && angle < 135) {
+                document.getElementById('status-text').textContent = 'Turn left';
+                document.getElementById('status-icon').innerHTML = '<img src="left.png" alt="Turn left" />';
+            } else {
+                document.getElementById('status-text').textContent = 'Turn right';
+                document.getElementById('status-icon').innerHTML = '<img src="right.png" alt="Turn right" />';
+            }
+        }
+
+        // Calculate bearing angle
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            var φ1 = lat1 * Math.PI/180;
+            var φ2 = lat2 * Math.PI/180;
+            var Δλ = (lon2-lon1) * Math.PI/180;
+
+            var y = Math.sin(Δλ) * Math.cos(φ2);
+            var x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+            var θ = Math.atan2(y, x);
+            var bearing = (θ * 180 / Math.PI + 360) % 360;
+
+            return bearing;
+        }
+    </script>
+</body>
+</html>
+
