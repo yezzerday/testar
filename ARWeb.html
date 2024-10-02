@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Location App</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/3.3.2/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="./places.js" onload="console.log('places.js loaded successfully');"></script>
 
     <style>
+        body { margin: 0; }
         #infoPopup {
             position: fixed;
             bottom: 0;
@@ -24,27 +25,18 @@
             float: right;
             font-weight: bold;
         }
-        img {
-            max-width: 100px;
-            margin-right: 10px;
-        }
     </style>
 </head>
 <body>
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: true;" 
-             renderer="logarithmicDepthBuffer: true"
-             onarready="console.log('AR Ready');" 
-             onarerror="console.error('AR Error');">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" 
+             renderer="logarithmicDepthBuffer: true;">
         <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
     <div id="infoPopup">
         <span class="close-btn" onclick="closePopup()">✖️</span>
-        <img id="popupImage" src="" alt="">
         <h3 id="popupName"></h3>
         <p id="popupDescription"></p>
-        <p><strong>เวลาเปิด-ปิด:</strong> <span id="popupHours"></span></p>
-        <p><strong>ที่อยู่:</strong> <span id="popupAddress"></span></p>
     </div>
 
     <script>
@@ -62,11 +54,20 @@
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
-            console.log("AR.js Loaded");
+
+            // ตรวจสอบการเข้าถึงกล้อง
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(() => {
+                    console.log("Camera access granted");
+                })
+                .catch((err) => {
+                    console.error("Error accessing camera: ", err);
+                    alert("ไม่สามารถเข้าถึงกล้อง");
+                });
         };
 
         function loadPlaces() {
-            console.log("Loading places..."); // Debug message
+            console.log("Loading places...");
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
 
@@ -80,17 +81,13 @@
                 });
 
                 document.querySelector('a-scene').appendChild(entity);
-                console.log(`Place added: ${place.name}`); // Debug message
+                console.log(`Place added: ${place.name}`); // Log to check if places are loaded
             });
         }
 
         function showPopup(place) {
-            document.getElementById('popupImage').src = place.image;
             document.getElementById('popupName').textContent = place.name;
             document.getElementById('popupDescription').textContent = place.description;
-            document.getElementById('popupHours').textContent = place.hours;
-            document.getElementById('popupAddress').textContent = place.address;
-
             document.getElementById('infoPopup').style.display = 'block';
         }
 
@@ -100,4 +97,5 @@
     </script>
 </body>
 </html>
+
 
