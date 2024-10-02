@@ -60,9 +60,11 @@
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
+            console.log("AR.js Loaded");
         };
 
         function loadPlaces() {
+            console.log("Loading places..."); // Debug message
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
 
@@ -76,6 +78,7 @@
                 });
 
                 document.querySelector('a-scene').appendChild(entity);
+                console.log(`Place added: ${place.name}`); // Debug message
             });
         }
 
