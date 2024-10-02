@@ -7,7 +7,8 @@ const places = [
         hours: "-",
         address: "-",
         image: "https://static.wixstatic.com/media/6725c1_e57f09adc563486596eee29ec825016a~mv2.jpg/v1/fill/w_1301,h_732,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_e57f09adc563486596eee29ec825016a~mv2.jpg",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะพยาบาลศาสตร์",
@@ -17,7 +18,8 @@ const places = [
         hours: "-",
         address: "-",
         image: "https://static.wixstatic.com/media/6725c1_dce9b2e103b84c3e99180fae5602e59b~mv2.jpg/v1/fill/w_838,h_629,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_dce9b2e103b84c3e99180fae5602e59b~mv2.jpg",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะเภสัชศาสตร์",
@@ -27,7 +29,8 @@ const places = [
         hours: "-",
         address: "-",
         image: "https://static.wixstatic.com/media/6725c1_9e75b1222fc24d56a192cf7055b37fa5~mv2.jpg/v1/fill/w_1051,h_607,al_c,q_85,enc_auto/6725c1_9e75b1222fc24d56a192cf7055b37fa5~mv2.jpg",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะสหเวชศาสตร์",
@@ -37,7 +40,8 @@ const places = [
         hours: "",
         address: "",
         image: "https://static.wixstatic.com/media/6725c1_5fa2e92fa8a6418ab3073218337267fe~mv2.jpg/v1/fill/w_1271,h_732,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_5fa2e92fa8a6418ab3073218337267fe~mv2.jpg",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะแพทยศาสตร์",
@@ -47,7 +51,8 @@ const places = [
         hours: "",
         address: "",
         image: "https://static.wixstatic.com/media/6725c1_ad4779d52fb14e66ad68305fadeb9c2b~mv2.jpg/v1/fill/w_1029,h_772,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_ad4779d52fb14e66ad68305fadeb9c2b~mv2.jpg",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะสาธารณสุขศาสตร์",
@@ -57,7 +62,8 @@ const places = [
         hours: "",
         address: "",
         image: "https://static.wixstatic.com/media/6725c1_c92f0e71ca3c442aa867b536e6ff3340~mv2.jpg/v1/fill/w_1269,h_735,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_c92f0e71ca3c442aa867b536e6ff3340~mv2.jpg",
-        type: "education"
+       //type: "education"
+        model: "models/hospital.glb" 
     },
     {
         name: "คณะวิทยาศาสตร์การแพทย์",
@@ -67,7 +73,8 @@ const places = [
         hours: "",
         address: "",
         image: "https://static.wixstatic.com/media/6725c1_c499253d015b4b708e55d9ba4d77579b~mv2.jpg/v1/fill/w_1268,h_732,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/6725c1_c499253d015b4b708e55d9ba4d77579b~mv2.jpg ",
-        type: "education"
+        //type: "education"
+        model: "models/hospital.glb" 
     },
     // {
     //     name: "คณะเกษตรศาสตร์ ทรัพยากรธรรมชาติและสิ่งแวดล้อม",
@@ -198,7 +205,8 @@ const places = [
         hours: "",
         address: "",
         image: "image/parking.png",
-        type: "parking"
+        //type: "parking"
+        model: "models/hospital.glb" 
     },
     {
         name: "test2 ร้านนวดป้าเขียว",
@@ -208,7 +216,8 @@ const places = [
         hours: "",
         address: "",
         image: "image/muscle.png",
-        type: "sport"
+        //type: "sport"
+        model: "models/hospital.glb" 
     },
     {
         name: "test3 ร้านซ่อม",
@@ -218,7 +227,8 @@ const places = [
         hours: "",
         address: "",
         image: "image/hospital.png",
-        type: "hospital"
+        //type: "hospital"
+        model: "models/hospital.glb" 
     },
     {
         name: "test4",
@@ -228,6 +238,7 @@ const places = [
         hours: "",
         address: "",
         image: "image/motorcycle.png",
-        type: "building"
+        //type: "building"
+        model: "models/hospital.glb" 
     },
 ];
