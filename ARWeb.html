@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -126,5 +126,91 @@
         }
     </script>
 </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Location App</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
+    <script src="./places.js"></script>
+    <style>
+        #infoPopup {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            display: none;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .close-btn {
+            cursor: pointer;
+            float: right;
+            font-weight: bold;
+        }
+        img {
+            max-width: 100px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <a-scene embedded arjs="sourceType: webcam; gpsMinDistance: 10; gpsTimeInterval: 1000;">
+        <a-camera gps-camera rotation-reader></a-camera>
+    </a-scene>
+
+    <div id="infoPopup">
+        <span class="close-btn" onclick="closePopup()">✖️</span>
+        <img id="popupImage" src="" alt="">
+        <h3 id="popupName"></h3>
+        <p id="popupDescription"></p>
+        <p><strong>เวลาเปิด-ปิด:</strong> <span id="popupHours"></span></p>
+        <p><strong>ที่อยู่:</strong> <span id="popupAddress"></span></p>
+    </div>
+
+    <script>
+        window.onload = () => {
+            loadPlaces();
+        };
+
+        function loadPlaces() {
+            places.forEach((place) => {
+                const entity = document.createElement('a-entity');
+
+                entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
+                entity.setAttribute('gltf-model', `url(${place.model});`);  // ใช้โมเดลจากข้อมูล
+                entity.setAttribute('scale', '0.5 0.5 0.5');
+                entity.setAttribute('look-at', '[gps-camera]');
+
+                // เพิ่ม listener สำหรับคลิกที่โมเดล
+                entity.addEventListener('click', () => {
+                    showPopup(place);
+                });
+
+                document.querySelector('a-scene').appendChild(entity);
+            });
+        }
+
+        function showPopup(place) {
+            document.getElementById('popupImage').src = place.image;
+            document.getElementById('popupName').textContent = place.name;
+            document.getElementById('popupDescription').textContent = place.description;
+            document.getElementById('popupHours').textContent = place.hours;
+            document.getElementById('popupAddress').textContent = place.address;
+
+            document.getElementById('infoPopup').style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('infoPopup').style.display = 'none';
+        }
+    </script>
+</body>
 </html>
+
 
