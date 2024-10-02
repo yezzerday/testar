@@ -31,8 +31,10 @@
     </style>
 </head>
 <body>
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" 
-             renderer="logarithmicDepthBuffer: true;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: true;" 
+             renderer="logarithmicDepthBuffer: true"
+             onarready="console.log('AR Ready');" 
+             onarerror="console.error('AR Error');">
         <a-camera gps-camera rotation-reader></a-camera>
     </a-scene>
 
@@ -98,3 +100,4 @@
     </script>
 </body>
 </html>
+
