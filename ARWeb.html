@@ -28,7 +28,6 @@
             max-width: 100px;
             margin-right: 10px;
         }
-        /* สไตล์ของกล่องข้อความ AR */
         .ar-label {
             background-color: rgba(255, 255, 255, 0.7);
             padding: 10px;
@@ -42,17 +41,12 @@
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" 
              renderer="logarithmicDepthBuffer: true;">
         <a-camera gps-camera rotation-reader></a-camera>
-
-        <!-- สถานที่ต่างๆ ที่จะแสดงใน AR -->
-        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
-            <a-plane width="3" height="1" color="white" position="0 0 -5"></a-plane>
-            <a-text value="The Shard, 6.6 km" align="center" color="black" position="0 0.5 -5"></a-text>
-        </a-entity>
-        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
-            <a-plane width="3" height="1" color="white" position="0 0 -6"></a-plane>
-            <a-text value="City of London, 7.3 km" align="center" color="black" position="0 0.5 -6"></a-text>
-        </a-entity>
     </a-scene>
+
+    <div id="infoPopup">
+        <span class="close-btn" onclick="closePopup()">x</span>
+        <div id="popupContent"></div>
+    </div>
 
     <script>
         window.onload = () => {
@@ -61,7 +55,7 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     console.log("Latitude: " + position.coords.latitude);
                     console.log("Longitude: " + position.coords.longitude);
-                    loadPlaces(); // โหลดสถานที่หลังจากได้รับตำแหน่ง
+                    loadPlaces(places); // โหลดสถานที่จาก places.js
                 }, (error) => {
                     console.error(error);
                     alert("ไม่สามารถเข้าถึงตำแหน่งของคุณ");
@@ -71,13 +65,12 @@
             }
         };
 
-        function loadPlaces() {
+        function loadPlaces(places) {
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
 
                 entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
 
-                // เพิ่มกล่องข้อความสำหรับแต่ละสถานที่
                 const plane = document.createElement('a-plane');
                 plane.setAttribute('width', '3');
                 plane.setAttribute('height', '1');
@@ -85,19 +78,36 @@
                 plane.setAttribute('position', '0 0 -5');
 
                 const text = document.createElement('a-text');
-                text.setAttribute('value', `${place.name}, ${place.distance} km`);
+                text.setAttribute('value', place.name);
                 text.setAttribute('align', 'center');
                 text.setAttribute('color', 'black');
                 text.setAttribute('position', '0 0.5 -5');
 
+                // เพิ่มฟังก์ชันคลิกให้ entity แสดง popup
+                entity.addEventListener('click', () => {
+                    showPopup(place);
+                });
+
                 entity.appendChild(plane);
                 entity.appendChild(text);
 
-                // Debugging
-                console.log("Adding place: " + place.name);
                 document.querySelector('a-scene').appendChild(entity);
-                console.log("Entity added to scene.");
             });
+        }
+
+        function showPopup(place) {
+            const popup = document.getElementById('infoPopup');
+            const content = document.getElementById('popupContent');
+            content.innerHTML = `
+                <img src="${place.img}" alt="${place.name}" />
+                <h3>${place.name}</h3>
+                <p>${place.description}</p>
+            `;
+            popup.style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('infoPopup').style.display = 'none';
         }
     </script>
 </body>
