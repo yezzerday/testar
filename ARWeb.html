@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AR Location App</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/3.3.2/aframe/build/aframe-ar.js"></script>
     <script src="./places.js" onload="console.log('places.js loaded successfully');"></script>
 
     <style>
-        body { margin: 0; }
         #infoPopup {
             position: fixed;
             bottom: 0;
@@ -25,19 +24,35 @@
             float: right;
             font-weight: bold;
         }
+        img {
+            max-width: 100px;
+            margin-right: 10px;
+        }
+        /* สไตล์ของกล่องข้อความ AR */
+        .ar-label {
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
 <body>
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" 
              renderer="logarithmicDepthBuffer: true;">
         <a-camera gps-camera rotation-reader></a-camera>
-    </a-scene>
 
-    <div id="infoPopup">
-        <span class="close-btn" onclick="closePopup()">✖️</span>
-        <h3 id="popupName"></h3>
-        <p id="popupDescription"></p>
-    </div>
+        <!-- สถานที่ต่างๆ ที่จะแสดงใน AR -->
+        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
+            <a-plane width="3" height="1" color="white" position="0 0 -5"></a-plane>
+            <a-text value="The Shard, 6.6 km" align="center" color="black" position="0 0.5 -5"></a-text>
+        </a-entity>
+        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
+            <a-plane width="3" height="1" color="white" position="0 0 -6"></a-plane>
+            <a-text value="City of London, 7.3 km" align="center" color="black" position="0 0.5 -6"></a-text>
+        </a-entity>
+    </a-scene>
 
     <script>
         window.onload = () => {
@@ -54,45 +69,32 @@
             } else {
                 alert("Geolocation is not supported by this browser.");
             }
-
-            // ตรวจสอบการเข้าถึงกล้อง
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(() => {
-                    console.log("Camera access granted");
-                })
-                .catch((err) => {
-                    console.error("Error accessing camera: ", err);
-                    alert("ไม่สามารถเข้าถึงกล้อง");
-                });
         };
 
         function loadPlaces() {
-            console.log("Loading places...");
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
 
                 entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
-                entity.setAttribute('gltf-model', `url(${place.model});`);
-                entity.setAttribute('scale', '0.5 0.5 0.5');
-                entity.setAttribute('look-at', '[gps-camera]');
 
-                entity.addEventListener('click', () => {
-                    showPopup(place);
-                });
+                // เพิ่มกล่องข้อความสำหรับแต่ละสถานที่
+                const plane = document.createElement('a-plane');
+                plane.setAttribute('width', '3');
+                plane.setAttribute('height', '1');
+                plane.setAttribute('color', 'white');
+                plane.setAttribute('position', '0 0 -5');
+
+                const text = document.createElement('a-text');
+                text.setAttribute('value', `${place.name}, ${place.distance} km`);
+                text.setAttribute('align', 'center');
+                text.setAttribute('color', 'black');
+                text.setAttribute('position', '0 0.5 -5');
+
+                entity.appendChild(plane);
+                entity.appendChild(text);
 
                 document.querySelector('a-scene').appendChild(entity);
-                console.log(`Place added: ${place.name}`); // Log to check if places are loaded
             });
-        }
-
-        function showPopup(place) {
-            document.getElementById('popupName').textContent = place.name;
-            document.getElementById('popupDescription').textContent = place.description;
-            document.getElementById('infoPopup').style.display = 'block';
-        }
-
-        function closePopup() {
-            document.getElementById('infoPopup').style.display = 'none';
         }
     </script>
 </body>
