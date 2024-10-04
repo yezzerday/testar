@@ -42,6 +42,16 @@
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" 
              renderer="logarithmicDepthBuffer: true;">
         <a-camera gps-camera rotation-reader></a-camera>
+
+        <!-- สถานที่ต่างๆ ที่จะแสดงใน AR -->
+        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
+            <a-plane width="3" height="1" color="white" position="0 0 -5"></a-plane>
+            <a-text value="The Shard, 6.6 km" align="center" color="black" position="0 0.5 -5"></a-text>
+        </a-entity>
+        <a-entity gps-entity-place="latitude: 13.746176; longitude: 100.5387776">
+            <a-plane width="3" height="1" color="white" position="0 0 -6"></a-plane>
+            <a-text value="City of London, 7.3 km" align="center" color="black" position="0 0.5 -6"></a-text>
+        </a-entity>
     </a-scene>
 
     <script>
@@ -51,7 +61,7 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     console.log("Latitude: " + position.coords.latitude);
                     console.log("Longitude: " + position.coords.longitude);
-                    loadPlaces(position.coords.latitude, position.coords.longitude); // โหลดสถานที่หลังจากได้รับตำแหน่ง
+                    loadPlaces(); // โหลดสถานที่หลังจากได้รับตำแหน่ง
                 }, (error) => {
                     console.error(error);
                     alert("ไม่สามารถเข้าถึงตำแหน่งของคุณ");
@@ -61,28 +71,11 @@
             }
         };
 
-        // ฟังก์ชันคำนวณระยะทางระหว่างพิกัดผู้ใช้กับสถานที่
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // รัศมีของโลกในกิโลเมตร
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            const distance = R * c; // คำนวณระยะทาง
-            return distance.toFixed(2); // ส่งกลับระยะทางที่เป็นเลขทศนิยม 2 ตำแหน่ง
-        }
-
-        // ฟังก์ชันโหลดสถานที่ต่างๆ
-        function loadPlaces(userLat, userLon) {
+        function loadPlaces() {
             places.forEach((place) => {
                 const entity = document.createElement('a-entity');
-                entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
 
-                // คำนวณระยะทางจากผู้ใช้ไปยังสถานที่
-                const distance = calculateDistance(userLat, userLon, place.latitude, place.longitude);
+                entity.setAttribute('gps-entity-place', `latitude: ${place.latitude}; longitude: ${place.longitude}`);
 
                 // เพิ่มกล่องข้อความสำหรับแต่ละสถานที่
                 const plane = document.createElement('a-plane');
@@ -92,7 +85,7 @@
                 plane.setAttribute('position', '0 0 -5');
 
                 const text = document.createElement('a-text');
-                text.setAttribute('value', `${place.name}, ${distance} km`);
+                text.setAttribute('value', `${place.name}, ${place.distance} km`);
                 text.setAttribute('align', 'center');
                 text.setAttribute('color', 'black');
                 text.setAttribute('position', '0 0.5 -5');
@@ -100,9 +93,13 @@
                 entity.appendChild(plane);
                 entity.appendChild(text);
 
+                // Debugging
+                console.log("Adding place: " + place.name);
                 document.querySelector('a-scene').appendChild(entity);
+                console.log("Entity added to scene.");
             });
         }
     </script>
 </body>
 </html>
+
