@@ -1,80 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR Location App</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/3.3.2/aframe/build/aframe-ar.js"></script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBdiQ-7RNfSvjBz27tgZ3U495rtCe-xJCE&libraries=places"></script>
-
-    <style>
-        /* สไตล์ของหน้า */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-        }
-        .ar-label {
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 5px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AR Location-based Example</title>
+  <style>
+    body, html {
+      margin: 0;
+      overflow: hidden;
+      position: relative;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    #ar-container {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+    }
+  </style>
 </head>
 <body>
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" renderer="logarithmicDepthBuffer: true;">
-        <a-camera gps-camera rotation-reader></a-camera>
-    </a-scene>
+  <div id="ar-container"></div>
+  <div id="info">กำลังดึงข้อมูลตำแหน่ง...</div>
 
-    <script>
-        // ฟังก์ชันโหลดตำแหน่ง
-        function loadPlaces(position) {
-            const places = [
-                { name: "Place 1",latitude: 16.751685403830074, longitude: 100.19655066388673, description: "Description of Place 1" },
-                { name: "Place 2", latitude: 16.75169538473392, longitude: 100.19696629722633, description: "Description of Place 2"},
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.153.0/build/three.module.js"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import * as THREE from 'three';
+
+    let scene, camera, renderer, info;
+    let userLat, userLon;
     
-                // ใส่ข้อมูลพิกัดสถานที่ของคุณที่นี่
-            ];
-            return places;
-        }
+    // กำหนดพิกัดของจุดที่ต้องการแสดง (เช่น The Shard)
+    const locations = [
+      { name: 'The Shard', lat: 51.5045, lon: -0.0865 },
+      { name: 'City of London', lat: 51.5155, lon: -0.0922 }
+    ];
 
-        window.onload = () => {
-            const scene = document.querySelector('a-scene');
+    // คำนวณระยะทางระหว่างสองพิกัด
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // รัศมีของโลกเป็นกิโลเมตร
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
 
-            // รับพิกัดปัจจุบันของผู้ใช้
-            navigator.geolocation.getCurrentPosition(function (position) {
-                const places = loadPlaces(position.coords);
-                places.forEach((place) => {
-                    const latitude = place.latitude;
-                    const longitude = place.longitude;
+    // สร้าง scene ของ Three.js
+    function initAR() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('ar-container').appendChild(renderer.domElement);
+      
+      // วางโมเดลข้อความบนฉาก
+      locations.forEach(location => {
+        const distance = calculateDistance(userLat, userLon, location.lat, location.lon).toFixed(2);
+        const div = document.createElement('div');
+        div.innerHTML = `${location.name} (${distance} km)`;
+        div.style.position = 'absolute';
+        div.style.backgroundColor = 'white';
+        div.style.padding = '5px';
+        div.style.borderRadius = '5px';
+        div.style.top = `${Math.random() * window.innerHeight}px`; // ทดลองใช้ random
+        div.style.left = `${Math.random() * window.innerWidth}px`; // ทดลองใช้ random
+        document.body.appendChild(div);
+      });
 
-                    // สร้างป้ายข้อความ AR ที่แสดงตำแหน่งจริง
-                    const placeEntity = document.createElement('a-entity');
-                    placeEntity.setAttribute('gps-entity-place', `latitude: ${latitude}; longitude: ${longitude};`);
+      // อัปเดตการแสดงผล
+      animate();
+    }
 
-                    const label = document.createElement('a-text');
-                    label.setAttribute('value', place.name);
-                    label.setAttribute('look-at', '[gps-camera]'); // หมุนข้อความตามการเคลื่อนไหวของกล้อง
-                    label.setAttribute('scale', '10 10 10');
-                    label.setAttribute('align', 'center');
-                    label.setAttribute('color', 'black');
-                    label.setAttribute('class', 'ar-label');
+    // ดึงข้อมูลตำแหน่งผู้ใช้
+    function getLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          userLat = position.coords.latitude;
+          userLon = position.coords.longitude;
+          info.innerHTML = `ตำแหน่งของคุณ: Lat: ${userLat}, Lon: ${userLon}`;
+          initAR();
+        }, (error) => {
+          info.innerHTML = 'ไม่สามารถดึงข้อมูลตำแหน่งได้';
+        });
+      } else {
+        info.innerHTML = 'อุปกรณ์ของคุณไม่รองรับการใช้ตำแหน่ง';
+      }
+    }
 
-                    placeEntity.appendChild(label);
-                    scene.appendChild(placeEntity);
-                });
-            },
-            (err) => console.error('Error retrieving position', err),
-            {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 27000,
-            });
-        };
-    </script>
+    // ฟังก์ชัน animate ของ Three.js
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // เริ่มต้นทำงาน
+    info = document.getElementById('info');
+    getLocation();
+  </script>
 </body>
 </html>
-
