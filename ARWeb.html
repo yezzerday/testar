@@ -64,77 +64,108 @@
       { name: 'test2', lat: 16.752218476494324,  lon: 100.19694661833331},
       { name: 'test1', lat: 16.75158939069105, lon:  100.19683970615459},
       { name: 'ข้าวมันไก่', lat: 16.750827082364435, lon: 100.19675233515522 }
-      
     ];
 
-    // ฟังก์ชันคำนวณระยะทาง
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // รัศมีของโลกเป็นกิโลเมตร
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-            Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // ผลลัพธ์เป็นกิโลเมตร
-}
-
-// ฟังก์ชันคำนวณทิศทาง (bearing) จากตำแหน่งผู้ใช้ไปยังตำแหน่งสถานที่
-function calculateBearing(lat1, lon1, lat2, lon2) {
-  const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) - 
-            Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
-  const bearing = Math.atan2(y, x) * (180 / Math.PI);
-  return (bearing + 360) % 360;
-}
-
-// ฟังก์ชันอัปเดตทิศทาง
-function onDeviceOrientation(event) {
-  const alpha = event.alpha; // การหมุนรอบแกน Z (ทิศทาง)
-  const heading = referenceHeading + alpha; // อัปเดตทิศทางของผู้ใช้
-
-  // ตรวจสอบว่ามี infoLabels ที่ถูกต้องหรือไม่ก่อนใช้งาน
-  if (infoLabels.length === 0) return;
-
-  // คำนวณตำแหน่งของแต่ละสถานที่
-  locations.forEach((location, index) => {
-    const distance = calculateDistance(userLat, userLon, location.lat, location.lon).toFixed(2);
-
-    const bearing = calculateBearing(userLat, userLon, location.lat, location.lon);
-    const angleToLocation = (bearing - heading + 360) % 360;
-
-    const screenX = (window.innerWidth / 2) + Math.sin(angleToLocation * (Math.PI / 180)) * (window.innerWidth / 2);
-    const screenY = window.innerHeight / 2;
-
-    // ตรวจสอบว่าป้ายข้อมูลถูกสร้างขึ้นแล้วหรือยัง
-    if (infoLabels[index]) {
-      infoLabels[index].style.left = `${screenX}px`;
-      infoLabels[index].style.top = `${screenY}px`;
-      infoLabels[index].textContent = `${location.name} (${distance} km)`;
-    } else {
-      console.error('ป้ายข้อมูลยังไม่ถูกสร้าง');
+    // ฟังก์ชันเปิดกล้อง
+    async function startCamera() {
+      const video = document.getElementById('camera-feed');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+      } catch (err) {
+        console.error('ไม่สามารถเข้าถึงกล้องได้:', err);
+      }
     }
-  });
-}
 
-// ฟังก์ชันเริ่มต้น
-function initAR() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.getElementById('ar-container').appendChild(renderer.domElement);
+    // ฟังก์ชันขอข้อมูลตำแหน่งของผู้ใช้
+    function getUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(position => {
+          userLat = position.coords.latitude;
+          userLon = position.coords.longitude;
+        }, err => {
+          console.error('ไม่สามารถเข้าถึงตำแหน่งผู้ใช้ได้:', err);
+        });
+      } else {
+        alert('เบราว์เซอร์ของคุณไม่รองรับ Geolocation');
+      }
+    }
 
-  locations.forEach((location, index) => {
-    const label = document.createElement('div');
-    label.classList.add('info-label');
-    label.textContent = `${location.name}`;
-    document.body.appendChild(label);
-    infoLabels.push(label); // เพิ่มป้ายข้อมูลลงในอาร์เรย์ infoLabels
-  });
+    // ฟังก์ชันคำนวณระยะทาง
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // รัศมีของโลกเป็นกิโลเมตร
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // ผลลัพธ์เป็นกิโลเมตร
+    }
 
-  animate();
-}
+    // ฟังก์ชันคำนวณทิศทาง (bearing) จากตำแหน่งผู้ใช้ไปยังตำแหน่งสถานที่
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - 
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+      const bearing = Math.atan2(y, x) * (180 / Math.PI);
+      return (bearing + 360) % 360;
+    }
+
+    // ฟังก์ชันอัปเดตทิศทาง
+    function onDeviceOrientation(event) {
+      const alpha = event.alpha; // การหมุนรอบแกน Z (ทิศทาง)
+      const heading = (referenceHeading + alpha) % 360; // อัปเดตทิศทางของผู้ใช้
+
+      if (!userLat || !userLon) return; // รอให้ได้ตำแหน่งก่อน
+
+      // คำนวณตำแหน่งของแต่ละสถานที่
+      locations.forEach((location, index) => {
+        const distance = calculateDistance(userLat, userLon, location.lat, location.lon).toFixed(2);
+
+        const bearing = calculateBearing(userLat, userLon, location.lat, location.lon);
+        const angleToLocation = (bearing - heading + 360) % 360;
+
+        const screenX = (window.innerWidth / 2) + Math.sin(angleToLocation * (Math.PI / 180)) * (window.innerWidth / 2);
+        const screenY = window.innerHeight / 2;
+
+        if (infoLabels[index]) {
+          infoLabels[index].style.left = `${screenX}px`;
+          infoLabels[index].style.top = `${screenY}px`;
+          infoLabels[index].textContent = `${location.name} (${distance} km)`;
+        }
+      });
+    }
+
+    // ฟังก์ชันเริ่มต้น AR
+    function initAR() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('ar-container').appendChild(renderer.domElement);
+
+      locations.forEach(location => {
+        const label = document.createElement('div');
+        label.classList.add('info-label');
+        document.body.appendChild(label);
+        infoLabels.push(label);
+      });
+
+      animate();
+    }
+
+    // ฟังก์ชัน Render Loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // เริ่มต้นทั้งหมด
+    window.addEventListener('deviceorientation', onDeviceOrientation);
+    startCamera();
+    getUserLocation();
+    initAR();
 
   </script>
 </body>
