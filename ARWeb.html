@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Location-based Example</title>
+  <title>AR.js Location-based Example</title>
   <style>
     body, html {
       margin: 0;
@@ -17,7 +17,6 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: black;
     }
     .info-label {
       position: absolute;
@@ -28,145 +27,42 @@
       pointer-events: none;
       transform: translate(-50%, -50%);
     }
-    video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: -1;
-    }
   </style>
 </head>
 <body>
-  <video id="camera-feed" autoplay></video>
-  <div id="ar-container"></div>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.153.0/build/three.module.js"
-      }
-    }
-  </script>
+  <!-- AR.js GPS location-based setup -->
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    device-orientation-permission-ui="enabled: false">
 
-  <script type="module">
-    import * as THREE from 'three';
+    <!-- GPS-based Entity -->
+    <a-entity gps-entity-place="latitude: 51.5045; longitude: -0.0865;">
+      <a-text value="The Shard" scale="50 50 50" color="red"></a-text>
+    </a-entity>
 
-    let scene, camera, renderer, userLat, userLon, referenceHeading;
-    let infoLabels = [];
+    <a-entity gps-entity-place="latitude: 16.748800919604886; longitude: 100.19662172643234;">
+      <a-text value="บริหาร" scale="50 50 50" color="red"></a-text>
+    </a-entity>
 
-    // พิกัดของสถานที่
-    const locations = [
-      { name: 'The Shard', lat: 51.5045, lon: -0.0865 },
-      { name: 'บริหาร', lat: 16.748800919604886, lon:  100.19662172643234},
-      { name: 'test2', lat: 16.752218476494324,  lon: 100.19694661833331},
-      { name: 'test1', lat: 16.75158939069105, lon:  100.19683970615459},
-      { name: 'ข้าวมันไก่', lat: 16.750827082364435, lon: 100.19675233515522 }
-    ];
+    <a-entity gps-entity-place="latitude: 16.752218476494324; longitude: 100.19694661833331;">
+      <a-text value="test2" scale="50 50 50" color="blue"></a-text>
+    </a-entity>
 
-    // ฟังก์ชันเปิดกล้อง
-    async function startCamera() {
-      const video = document.getElementById('camera-feed');
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        video.srcObject = stream;
-      } catch (err) {
-        console.error('ไม่สามารถเข้าถึงกล้องได้:', err);
-      }
-    }
+    <a-entity gps-entity-place="latitude: 16.75158939069105; longitude: 100.19683970615459;">
+      <a-text value="test1" scale="50 50 50" color="green"></a-text>
+    </a-entity>
 
-    // ฟังก์ชันขอข้อมูลตำแหน่งของผู้ใช้
-    function getUserLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(position => {
-          userLat = position.coords.latitude;
-          userLon = position.coords.longitude;
-        }, err => {
-          console.error('ไม่สามารถเข้าถึงตำแหน่งผู้ใช้ได้:', err);
-        });
-      } else {
-        alert('เบราว์เซอร์ของคุณไม่รองรับ Geolocation');
-      }
-    }
+    <a-entity gps-entity-place="latitude: 16.750827082364435; longitude: 100.19675233515522;">
+      <a-text value="ข้าวมันไก่" scale="50 50 50" color="yellow"></a-text>
+    </a-entity>
+    
+  </a-scene>
 
-    // ฟังก์ชันคำนวณระยะทาง
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371; // รัศมีของโลกเป็นกิโลเมตร
-      const dLat = (lat2 - lat1) * (Math.PI / 180);
-      const dLon = (lon2 - lon1) * (Math.PI / 180);
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // ผลลัพธ์เป็นกิโลเมตร
-    }
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
 
-    // ฟังก์ชันคำนวณทิศทาง (bearing) จากตำแหน่งผู้ใช้ไปยังตำแหน่งสถานที่
-    function calculateBearing(lat1, lon1, lat2, lon2) {
-      const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) - 
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
-      const bearing = Math.atan2(y, x) * (180 / Math.PI);
-      return (bearing + 360) % 360;
-    }
-
-    // ฟังก์ชันอัปเดตทิศทาง
-    function onDeviceOrientation(event) {
-      const alpha = event.alpha; // การหมุนรอบแกน Z (ทิศทาง)
-      const heading = (referenceHeading + alpha) % 360; // อัปเดตทิศทางของผู้ใช้
-
-      if (!userLat || !userLon) return; // รอให้ได้ตำแหน่งก่อน
-
-      // คำนวณตำแหน่งของแต่ละสถานที่
-      locations.forEach((location, index) => {
-        const distance = calculateDistance(userLat, userLon, location.lat, location.lon).toFixed(2);
-
-        const bearing = calculateBearing(userLat, userLon, location.lat, location.lon);
-        const angleToLocation = (bearing - heading + 360) % 360;
-
-        const screenX = (window.innerWidth / 2) + Math.sin(angleToLocation * (Math.PI / 180)) * (window.innerWidth / 2);
-        const screenY = window.innerHeight / 2;
-
-        if (infoLabels[index]) {
-          infoLabels[index].style.left = `${screenX}px`;
-          infoLabels[index].style.top = `${screenY}px`;
-          infoLabels[index].textContent = `${location.name} (${distance} km)`;
-        }
-      });
-    }
-
-    // ฟังก์ชันเริ่มต้น AR
-    function initAR() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      renderer = new THREE.WebGLRenderer();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.getElementById('ar-container').appendChild(renderer.domElement);
-
-      locations.forEach(location => {
-        const label = document.createElement('div');
-        label.classList.add('info-label');
-        document.body.appendChild(label);
-        infoLabels.push(label);
-      });
-
-      animate();
-    }
-
-    // ฟังก์ชัน Render Loop
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-
-    // เริ่มต้นทั้งหมด
-    window.addEventListener('deviceorientation', onDeviceOrientation);
-    startCamera();
-    getUserLocation();
-    initAR();
-
-  </script>
 </body>
 </html>
