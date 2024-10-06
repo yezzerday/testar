@@ -38,12 +38,15 @@
       z-index: -1;
     }
   </style>
+  
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  
+  <!-- AR.js -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+
 </head>
 <body>
-  <!-- Include AR.js -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
-
   <!-- AR scene -->
   <a-scene vr-mode-ui="false" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
 
@@ -53,7 +56,7 @@
     </a-entity>
 
     <!-- ป้ายข้อมูลสำหรับ City of London -->
-    <a-entity gps-entity-place="latitude: 16.750827082364435; longitude: 100.19675233515522;">
+    <a-entity gps-entity-place="latitude:  16.750827082364435; longitude: 100.19675233515522;">
       <a-text value="City of London" scale="50 50 50" color="black"></a-text>
     </a-entity>
 
@@ -64,3 +67,4 @@
 
 </body>
 </html>
+
