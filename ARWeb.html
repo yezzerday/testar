@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR.js Location-based Example</title>
+  <title>AR Location-based Example</title>
   <style>
     body, html {
       margin: 0;
@@ -17,6 +17,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
+      background: black;
     }
     .info-label {
       position: absolute;
@@ -27,42 +28,39 @@
       pointer-events: none;
       transform: translate(-50%, -50%);
     }
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
-
-  <!-- AR.js GPS location-based setup -->
-  <a-scene
-    vr-mode-ui="enabled: false"
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    device-orientation-permission-ui="enabled: false">
-
-    <!-- GPS-based Entity -->
-    <a-entity gps-entity-place="latitude: 51.5045; longitude: -0.0865;">
-      <a-text value="The Shard" scale="50 50 50" color="red"></a-text>
-    </a-entity>
-
-    <a-entity gps-entity-place="latitude: 16.748800919604886; longitude: 100.19662172643234;">
-      <a-text value="บริหาร" scale="50 50 50" color="red"></a-text>
-    </a-entity>
-
-    <a-entity gps-entity-place="latitude: 16.752218476494324; longitude: 100.19694661833331;">
-      <a-text value="test2" scale="50 50 50" color="blue"></a-text>
-    </a-entity>
-
-    <a-entity gps-entity-place="latitude: 16.75158939069105; longitude: 100.19683970615459;">
-      <a-text value="test1" scale="50 50 50" color="green"></a-text>
-    </a-entity>
-
-    <a-entity gps-entity-place="latitude: 16.750827082364435; longitude: 100.19675233515522;">
-      <a-text value="ข้าวมันไก่" scale="50 50 50" color="yellow"></a-text>
-    </a-entity>
-    
-  </a-scene>
-
+  <!-- Include AR.js -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
+  <script src="https://rawcdn.githack.com/AR-js-org/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
+
+  <!-- AR scene -->
+  <a-scene vr-mode-ui="false" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+
+    <!-- ป้ายข้อมูลสำหรับ The Shard -->
+    <a-entity gps-entity-place="latitude: 16.75158939069105; longitude: 100.19683970615459;">
+      <a-text value="The Shard" scale="50 50 50" color="black"></a-text>
+    </a-entity>
+
+    <!-- ป้ายข้อมูลสำหรับ City of London -->
+    <a-entity gps-entity-place="latitude: 16.750827082364435; longitude: 100.19675233515522;">
+      <a-text value="City of London" scale="50 50 50" color="black"></a-text>
+    </a-entity>
+
+    <!-- กล้อง AR.js -->
+    <a-camera gps-camera rotation-reader></a-camera>
+
+  </a-scene>
 
 </body>
 </html>
