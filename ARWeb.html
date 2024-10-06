@@ -8,63 +8,112 @@
     body, html {
       margin: 0;
       overflow: hidden;
-      height: 100vh;
-      width: 100vw;
+      position: relative;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
     #ar-container {
-      position: absolute;
-      top: 0;
-      left: 0;
       width: 100vw;
       height: 100vh;
-      background: black;
-    }
-    .info-label {
-      position: absolute;
-      background-color: rgba(255, 255, 255, 0.8);
-      padding: 5px;
-      border-radius: 5px;
-      font-size: 14px;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-    }
-    video {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      z-index: -1;
+      background: #000;
     }
   </style>
-  
-  <!-- A-Frame -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  
-  <!-- AR.js -->
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
-
 </head>
 <body>
-  <!-- AR scene -->
-  <a-scene vr-mode-ui="false" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <div id="ar-container"></div>
+  <div id="info">กำลังดึงข้อมูลตำแหน่ง...</div>
 
-    <!-- ป้ายข้อมูลสำหรับ The Shard -->
-    <a-entity gps-entity-place="latitude: 16.75158939069105; longitude: 100.19683970615459;">
-      <a-text value="The Shard" scale="50 50 50" color="black"></a-text>
-    </a-entity>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.153.0/build/three.module.js"
+      }
+    }
+  </script>
+  
+  <script type="module">
+    import * as THREE from 'three';
 
-    <!-- ป้ายข้อมูลสำหรับ City of London -->
-    <a-entity gps-entity-place="latitude:  16.750827082364435; longitude: 100.19675233515522;">
-      <a-text value="City of London" scale="50 50 50" color="black"></a-text>
-    </a-entity>
+    let scene, camera, renderer, info;
+    let userLat, userLon;
+    
+    // กำหนดพิกัดของจุดที่ต้องการแสดง (เช่น The Shard)
+    const locations = [
+      { name: 'The Shard', lat: 51.5045, lon: -0.0865 },
+      { name: 'City of London', lat: 51.5155, lon: -0.0922 }
+    ];
 
-    <!-- กล้อง AR.js -->
-    <a-camera gps-camera rotation-reader></a-camera>
+    // คำนวณระยะทางระหว่างสองพิกัด
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // รัศมีของโลกเป็นกิโลเมตร
+      const dLat = (lat2 - lat1) * (Math.PI / 180);
+      const dLon = (lon2 - lon1) * (Math.PI / 180);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
 
-  </a-scene>
+    // สร้าง scene ของ Three.js
+    function initAR() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('ar-container').appendChild(renderer.domElement);
+      
+      // วางโมเดลข้อความบนฉาก
+      locations.forEach(location => {
+        const distance = calculateDistance(userLat, userLon, location.lat, location.lon).toFixed(2);
+        const div = document.createElement('div');
+        div.innerHTML = `${location.name} (${distance} km)`;
+        div.style.position = 'absolute';
+        div.style.backgroundColor = 'white';
+        div.style.padding = '5px';
+        div.style.borderRadius = '5px';
+        div.style.top = `${Math.random() * window.innerHeight}px`; // ทดลองใช้ random
+        div.style.left = `${Math.random() * window.innerWidth}px`; // ทดลองใช้ random
+        document.body.appendChild(div);
+      });
 
+      // อัปเดตการแสดงผล
+      animate();
+    }
+
+    // ดึงข้อมูลตำแหน่งผู้ใช้
+    function getLocation() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          userLat = position.coords.latitude;
+          userLon = position.coords.longitude;
+          info.innerHTML = `ตำแหน่งของคุณ: Lat: ${userLat}, Lon: ${userLon}`;
+          initAR();
+        }, (error) => {
+          info.innerHTML = 'ไม่สามารถดึงข้อมูลตำแหน่งได้';
+        });
+      } else {
+        info.innerHTML = 'อุปกรณ์ของคุณไม่รองรับการใช้ตำแหน่ง';
+      }
+    }
+
+    // ฟังก์ชัน animate ของ Three.js
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // เริ่มต้นทำงาน
+    info = document.getElementById('info');
+    getLocation();
+  </script>
 </body>
 </html>
 
