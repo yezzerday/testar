@@ -8,12 +8,16 @@
     body, html {
       margin: 0;
       overflow: hidden;
-      position: relative;
+      height: 100vh;
+      width: 100vw;
     }
     #ar-container {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
-      background: #000;
+      background: black;
     }
     .info-label {
       position: absolute;
@@ -24,9 +28,19 @@
       pointer-events: none;
       transform: translate(-50%, -50%);
     }
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: -1;
+    }
   </style>
 </head>
 <body>
+  <video id="camera-feed" autoplay></video>
   <div id="ar-container"></div>
 
   <script type="importmap">
@@ -36,7 +50,7 @@
       }
     }
   </script>
-  
+
   <script type="module">
     import * as THREE from 'three';
 
@@ -45,10 +59,12 @@
 
     // พิกัดของสถานที่
     const locations = [
+      { name: 'The Shard', lat: 51.5045, lon: -0.0865 },
       { name: 'บริหาร', lat: 16.748800919604886, lon:  100.19662172643234},
       { name: 'test2', lat: 16.752218476494324,  lon: 100.19694661833331},
       { name: 'test1', lat: 16.75158939069105, lon:  100.19683970615459},
       { name: 'ข้าวมันไก่', lat: 16.750827082364435, lon: 100.19675233515522 }
+      
     ];
 
     // ฟังก์ชันคำนวณระยะทาง
@@ -61,6 +77,15 @@
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c; // ผลลัพธ์เป็นกิโลเมตร
+    }
+
+    // ฟังก์ชันคำนวณทิศทาง (bearing) จากตำแหน่งผู้ใช้ไปยังตำแหน่งสถานที่
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - 
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+      const bearing = Math.atan2(y, x) * (180 / Math.PI);
+      return (bearing + 360) % 360;
     }
 
     // ฟังก์ชันอัปเดตทิศทาง
@@ -83,15 +108,6 @@
         infoLabels[index].style.top = `${screenY}px`;
         infoLabels[index].textContent = `${location.name} (${distance} km)`;
       });
-    }
-
-    // ฟังก์ชันคำนวณทิศทาง (bearing) จากตำแหน่งผู้ใช้ไปยังตำแหน่งสถานที่
-    function calculateBearing(lat1, lon1, lat2, lon2) {
-      const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) - 
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
-      const bearing = Math.atan2(y, x) * (180 / Math.PI);
-      return (bearing + 360) % 360;
     }
 
     // ฟังก์ชันเริ่มต้น
@@ -141,10 +157,23 @@
     window.addEventListener('deviceorientation', onDeviceOrientation);
     window.addEventListener('deviceorientationabsolute', updateReferenceHeading);
 
+    // เปิดกล้องผู้ใช้
+    function startCamera() {
+      const video = document.getElementById('camera-feed');
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then((stream) => {
+          video.srcObject = stream;
+        })
+        .catch((error) => {
+          console.error('ไม่สามารถเข้าถึงกล้องได้', error);
+        });
+    }
+
     // เริ่มต้นการทำงาน
+    startCamera();
     getLocation();
 
   </script>
 </body>
 </html>
-
